@@ -1,0 +1,343 @@
+
+-- LocalScript in StarterPlayerScripts or similar
+
+local player = game.Players.LocalPlayer
+local mouse = player:GetMouse()
+local UIS = game:GetService("UserInputService")
+local gui = Instance.new("ScreenGui")
+gui.Parent = player:WaitForChild("PlayerGui")
+gui.Name = "EugeneCheatGUI"
+
+-- Main Frame
+local frame = Instance.new("Frame")
+frame.Size = UDim2.new(0, 200, 0, 450)  -- Increased height for fly controls
+frame.Position = UDim2.new(0.5, -100, 0.5, -225)
+frame.BackgroundColor3 = Color3.fromRGB(50, 50, 50)
+frame.BorderSizePixel = 0
+frame.Active = true
+frame.ClipsDescendants = true  -- To clip content when minimized
+frame.Parent = gui
+
+-- Title Bar
+local titleBar = Instance.new("Frame")
+titleBar.Size = UDim2.new(1, 0, 0, 30)
+titleBar.BackgroundColor3 = Color3.fromRGB(30, 30, 30)
+titleBar.Parent = frame
+
+local titleLabel = Instance.new("TextLabel")
+titleLabel.Size = UDim2.new(1, -30, 1, 0)
+titleLabel.Position = UDim2.new(0, 0, 0, 0)
+titleLabel.Text = "Eugene Cheat GUI"
+titleLabel.TextColor3 = Color3.fromRGB(255, 255, 255)
+titleLabel.BackgroundTransparency = 1
+titleLabel.Parent = titleBar
+
+-- Minimize Button
+local minimizeButton = Instance.new("TextButton")
+minimizeButton.Size = UDim2.new(0, 30, 1, 0)
+minimizeButton.Position = UDim2.new(1, -30, 0, 0)
+minimizeButton.Text = "-"
+minimizeButton.TextColor3 = Color3.fromRGB(255, 255, 255)
+minimizeButton.BackgroundColor3 = Color3.fromRGB(200, 50, 50)
+minimizeButton.Parent = titleBar
+
+local minimized = false
+minimizeButton.MouseButton1Click:Connect(function()
+    minimized = not minimized
+    if minimized then
+        frame.Size = UDim2.new(0, 200, 0, 30)
+        minimizeButton.Text = "+"
+    else
+        frame.Size = UDim2.new(0, 200, 0, 450)
+        minimizeButton.Text = "-"
+    end
+end)
+
+-- Make GUI Draggable (compatible with mobile)
+local dragging = false
+local dragInput
+local dragStart
+local startPos
+
+local function update(input)
+    local delta = input.Position - dragStart
+    frame.Position = UDim2.new(startPos.X.Scale, startPos.X.Offset + delta.X, startPos.Y.Scale, startPos.Y.Offset + delta.Y)
+end
+
+titleBar.InputBegan:Connect(function(input)
+    if input.UserInputType == Enum.UserInputType.MouseButton1 or input.UserInputType == Enum.UserInputType.Touch then
+        dragging = true
+        dragStart = input.Position
+        startPos = frame.Position
+
+        input.Changed:Connect(function()
+            if input.UserInputState == Enum.UserInputState.End then
+                dragging = false
+            end
+        end)
+    end
+end)
+
+titleBar.InputChanged:Connect(function(input)
+    if input.UserInputType == Enum.UserInputType.MouseMovement or input.UserInputType == Enum.UserInputType.Touch then
+        dragInput = input
+    end
+end)
+
+UIS.InputChanged:Connect(function(input)
+    if input == dragInput and dragging then
+        update(input)
+    end
+end)
+
+-- Content Frame
+local content = Instance.new("Frame")
+content.Size = UDim2.new(1, 0, 1, -30)
+content.Position = UDim2.new(0, 0, 0, 30)
+content.BackgroundTransparency = 1
+content.Parent = frame
+
+-- WalkSpeed
+local wsLabel = Instance.new("TextLabel")
+wsLabel.Size = UDim2.new(1, 0, 0, 30)
+wsLabel.Text = "WalkSpeed: 16"
+wsLabel.TextColor3 = Color3.fromRGB(255, 255, 255)
+wsLabel.BackgroundTransparency = 1
+wsLabel.Parent = content
+
+local wsSlider = Instance.new("TextBox")
+wsSlider.Size = UDim2.new(1, 0, 0, 30)
+wsSlider.Position = UDim2.new(0, 0, 0, 30)
+wsSlider.Text = "16"
+wsSlider.Parent = content
+
+wsSlider.FocusLost:Connect(function()
+    local humanoid = player.Character and player.Character:FindFirstChildOfClass("Humanoid")
+    if humanoid then
+        humanoid.WalkSpeed = tonumber(wsSlider.Text) or 16
+        wsLabel.Text = "WalkSpeed: " .. humanoid.WalkSpeed
+    end
+end)
+
+-- JumpPower
+local jpLabel = Instance.new("TextLabel")
+jpLabel.Size = UDim2.new(1, 0, 0, 30)
+jpLabel.Position = UDim2.new(0, 0, 0, 60)
+jpLabel.Text = "JumpPower: 50"
+jpLabel.TextColor3 = Color3.fromRGB(255, 255, 255)
+jpLabel.BackgroundTransparency = 1
+jpLabel.Parent = content
+
+local jpSlider = Instance.new("TextBox")
+jpSlider.Size = UDim2.new(1, 0, 0, 30)
+jpSlider.Position = UDim2.new(0, 0, 0, 90)
+jpSlider.Text = "50"
+jpSlider.Parent = content
+
+jpSlider.FocusLost:Connect(function()
+    local humanoid = player.Character and player.Character:FindFirstChildOfClass("Humanoid")
+    if humanoid then
+        humanoid.JumpPower = tonumber(jpSlider.Text) or 50
+        jpLabel.Text = "JumpPower: " .. humanoid.JumpPower
+    end
+end)
+
+-- Noclip Toggle
+local noclipButton = Instance.new("TextButton")
+noclipButton.Size = UDim2.new(1, 0, 0, 30)
+noclipButton.Position = UDim2.new(0, 0, 0, 120)
+noclipButton.Text = "Noclip: Off"
+noclipButton.BackgroundColor3 = Color3.fromRGB(100, 100, 100)
+noclipButton.Parent = content
+
+local noclip = false
+local noclipConn
+
+noclipButton.MouseButton1Click:Connect(function()
+    noclip = not noclip
+    if noclip then
+        noclipButton.Text = "Noclip: On"
+        noclipButton.BackgroundColor3 = Color3.fromRGB(50, 200, 50)
+        noclipConn = game:GetService("RunService").Stepped:Connect(function()
+            if player.Character then
+                for _, part in ipairs(player.Character:GetDescendants()) do
+                    if part:IsA("BasePart") and part.CanCollide then
+                        part.CanCollide = false
+                    end
+                end
+            end
+        end)
+    else
+        noclipButton.Text = "Noclip: Off"
+        noclipButton.BackgroundColor3 = Color3.fromRGB(100, 100, 100)
+        if noclipConn then
+            noclipConn:Disconnect()
+        end
+    end
+end)
+
+-- Fly Toggle
+local flyButton = Instance.new("TextButton")
+flyButton.Size = UDim2.new(1, 0, 0, 30)
+flyButton.Position = UDim2.new(0, 0, 0, 150)
+flyButton.Text = "Fly: Off"
+flyButton.BackgroundColor3 = Color3.fromRGB(100, 100, 100)
+flyButton.Parent = content
+
+local flying = false
+local flySpeed = 50
+local bodyGyro
+local bodyVelocity
+local inputBeganConn
+local inputEndedConn
+local renderSteppedConn
+local controls = {
+    forward = 0,
+    backward = 0,
+    left = 0,
+    right = 0,
+    up = 0,
+    down = 0
+}
+local isMobile = UIS.TouchEnabled
+
+-- Fly Controls for Mobile
+local flyControls = Instance.new("Frame")
+flyControls.Size = UDim2.new(1, 0, 0, 200)
+flyControls.Position = UDim2.new(0, 0, 0, 180)
+flyControls.BackgroundTransparency = 1
+flyControls.Visible = false
+flyControls.Parent = content
+
+-- Create buttons
+local function createFlyButton(name, pos, actionDown, actionUp)
+    local btn = Instance.new("TextButton")
+    btn.Size = UDim2.new(0, 60, 0, 30)
+    btn.Position = pos
+    btn.Text = name
+    btn.BackgroundColor3 = Color3.fromRGB(150, 150, 150)
+    btn.Parent = flyControls
+    btn.MouseButton1Down:Connect(actionDown)
+    btn.MouseButton1Up:Connect(actionUp)
+    return btn
+end
+
+createFlyButton("Forward", UDim2.new(0.35, 0, 0, 0), function() controls.forward = 1 end, function() controls.forward = 0 end)
+createFlyButton("Backward", UDim2.new(0.35, 0, 0, 60), function() controls.backward = 1 end, function() controls.backward = 0 end)
+createFlyButton("Left", UDim2.new(0, 0, 0, 30), function() controls.left = 1 end, function() controls.left = 0 end)
+createFlyButton("Right", UDim2.new(0.7, 0, 0, 30), function() controls.right = 1 end, function() controls.right = 0 end)
+createFlyButton("Up", UDim2.new(0, 0, 0, 90), function() controls.up = 1 end, function() controls.up = 0 end)
+createFlyButton("Down", UDim2.new(0.7, 0, 0, 90), function() controls.down = 1 end, function() controls.down = 0 end)
+
+local function startFly()
+    local character = player.Character
+    if not character then return end
+    local humanoidRootPart = character:WaitForChild("HumanoidRootPart")
+    
+    bodyGyro = Instance.new("BodyGyro")
+    bodyGyro.P = 9e4
+    bodyGyro.MaxTorque = Vector3.new(9e9, 9e9, 9e9)
+    bodyGyro.CFrame = humanoidRootPart.CFrame
+    bodyGyro.Parent = humanoidRootPart
+    
+    bodyVelocity = Instance.new("BodyVelocity")
+    bodyVelocity.Velocity = Vector3.new(0, 0, 0)
+    bodyVelocity.MaxForce = Vector3.new(9e9, 9e9, 9e9)
+    bodyVelocity.Parent = humanoidRootPart
+    
+    -- Reset controls
+    for k in pairs(controls) do controls[k] = 0 end
+    
+    -- Keyboard controls
+    local keyMap = {
+        [Enum.KeyCode.W] = "forward",
+        [Enum.KeyCode.S] = "backward",
+        [Enum.KeyCode.A] = "left",
+        [Enum.KeyCode.D] = "right",
+        [Enum.KeyCode.Space] = "up",
+        [Enum.KeyCode.LeftControl] = "down",
+    }
+    
+    inputBeganConn = UIS.InputBegan:Connect(function(input, gameProcessed)
+        if gameProcessed then return end
+        if input.UserInputType == Enum.UserInputType.Keyboard then
+            local dir = keyMap[input.KeyCode]
+            if dir then controls[dir] = 1 end
+        end
+    end)
+    
+    inputEndedConn = UIS.InputEnded:Connect(function(input)
+        if input.UserInputType == Enum.UserInputType.Keyboard then
+            local dir = keyMap[input.KeyCode]
+            if dir then controls[dir] = 0 end
+        end
+    end)
+    
+    -- Render loop
+    renderSteppedConn = game:GetService("RunService").RenderStepped:Connect(function()
+        if flying and bodyGyro and bodyVelocity then
+            bodyGyro.CFrame = workspace.CurrentCamera.CFrame
+            local camLook = workspace.CurrentCamera.CFrame.LookVector
+            local camRight = workspace.CurrentCamera.CFrame.RightVector
+            local moveX = -controls.left + controls.right
+            local moveY = controls.up - controls.down
+            local moveZ = controls.forward - controls.backward
+            local move = Vector3.new(moveX, moveY, moveZ)
+            bodyVelocity.Velocity = (camLook * move.Z + camRight * move.X + Vector3.new(0, move.Y, 0)) * flySpeed
+        end
+    end)
+    
+    -- Show mobile controls if applicable
+    if isMobile then
+        flyControls.Visible = true
+    end
+end
+
+local function stopFly()
+    if bodyGyro then bodyGyro:Destroy() end
+    if bodyVelocity then bodyVelocity:Destroy() end
+    if inputBeganConn then inputBeganConn:Disconnect() end
+    if inputEndedConn then inputEndedConn:Disconnect() end
+    if renderSteppedConn then renderSteppedConn:Disconnect() end
+    flyControls.Visible = false
+    -- Reset controls
+    for k in pairs(controls) do controls[k] = 0 end
+end
+
+flyButton.MouseButton1Click:Connect(function()
+    flying = not flying
+    if flying then
+        flyButton.Text = "Fly: On"
+        flyButton.BackgroundColor3 = Color3.fromRGB(50, 200, 50)
+        startFly()
+    else
+        flyButton.Text = "Fly: Off"
+        flyButton.BackgroundColor3 = Color3.fromRGB(100, 100, 100)
+        stopFly()
+    end
+end)
+
+-- Update on character added
+player.CharacterAdded:Connect(function(char)
+    if noclip then
+        -- Re-enable noclip if was on
+        noclipConn = game:GetService("RunService").Stepped:Connect(function()
+            for _, part in ipairs(char:GetDescendants()) do
+                if part:IsA("BasePart") and part.CanCollide then
+                    part.CanCollide = false
+                end
+            end
+        end)
+    end
+    if flying then
+        -- Re-start fly
+        stopFly()
+        startFly()
+    end
+    -- Update labels
+    local humanoid = char:WaitForChild("Humanoid")
+    wsLabel.Text = "WalkSpeed: " .. humanoid.WalkSpeed
+    wsSlider.Text = tostring(humanoid.WalkSpeed)
+    jpLabel.Text = "JumpPower: " .. humanoid.JumpPower
+    jpSlider.Text = tostring(humanoid.JumpPower)
+end)
