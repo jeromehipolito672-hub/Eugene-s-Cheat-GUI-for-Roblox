@@ -10,8 +10,8 @@ gui.Name = "CheatGUI"
 
 -- Main Frame
 local frame = Instance.new("Frame")
-frame.Size = UDim2.new(0, 200, 0, 500)  -- Increased height for more features
-frame.Position = UDim2.new(0.5, -100, 0.5, -250)
+frame.Size = UDim2.new(0, 200, 0, 400)  -- Adjusted height
+frame.Position = UDim2.new(0.5, -100, 0.5, -200)
 frame.BackgroundColor3 = Color3.fromRGB(50, 50, 50)
 frame.BorderSizePixel = 0
 frame.Active = true
@@ -24,10 +24,10 @@ titleBar.Size = UDim2.new(1, 0, 0, 30)
 titleBar.BackgroundColor3 = Color3.fromRGB(30, 30, 30)
 titleBar.Parent = frame
 
-local titleLabel = Instance.new("EUGENEIUM")
+local titleLabel = Instance.new("TextLabel")
 titleLabel.Size = UDim2.new(1, -30, 1, 0)
 titleLabel.Position = UDim2.new(0, 0, 0, 0)
-titleLabel.Text = "Cheat GUI"
+titleLabel.Text = "EUGENEIUM"
 titleLabel.TextColor3 = Color3.fromRGB(255, 255, 255)
 titleLabel.BackgroundTransparency = 1
 titleLabel.Parent = titleBar
@@ -48,7 +48,7 @@ minimizeButton.MouseButton1Click:Connect(function()
         frame.Size = UDim2.new(0, 200, 0, 30)
         minimizeButton.Text = "+"
     else
-        frame.Size = UDim2.new(0, 200, 0, 500)
+        frame.Size = UDim2.new(0, 200, 0, 400)
         minimizeButton.Text = "-"
     end
 end)
@@ -321,54 +321,28 @@ infJumpButton.MouseButton1Click:Connect(function()
     end
 end)
 
--- God Mode Toggle
-local godModeButton = Instance.new("TextButton")
-godModeButton.Size = UDim2.new(1, 0, 0, 30)
-godModeButton.Position = UDim2.new(0, 0, 0, 300)
-godModeButton.Text = "God Mode: Off"
-godModeButton.BackgroundColor3 = Color3.fromRGB(100, 100, 100)
-godModeButton.Parent = content
+-- TP Tool Button
+local tpToolButton = Instance.new("TextButton")
+tpToolButton.Size = UDim2.new(1, 0, 0, 30)
+tpToolButton.Position = UDim2.new(0, 0, 0, 300)
+tpToolButton.Text = "Get TP Tool"
+tpToolButton.BackgroundColor3 = Color3.fromRGB(100, 100, 100)
+tpToolButton.Parent = content
 
-local godMode = false
-local godModeConn
-
-godModeButton.MouseButton1Click:Connect(function()
-    godMode = not godMode
-    if godMode then
-        godModeButton.Text = "God Mode: On"
-        godModeButton.BackgroundColor3 = Color3.fromRGB(50, 200, 50)
-        local humanoid = player.Character and player.Character:FindFirstChildOfClass("Humanoid")
-        if humanoid then
-            godModeConn = humanoid.HealthChanged:Connect(function(health)
-                if health < humanoid.MaxHealth then
-                    humanoid.Health = humanoid.MaxHealth
-                end
-            end)
+local tpTool
+tpToolButton.MouseButton1Click:Connect(function()
+    if tpTool then return end
+    tpTool = Instance.new("Tool")
+    tpTool.Name = "Teleport Tool"
+    tpTool.Parent = player.Backpack
+    tpTool.Activated:Connect(function()
+        local char = player.Character
+        if char and char:FindFirstChild("HumanoidRootPart") then
+            char.HumanoidRootPart.CFrame = mouse.Hit + Vector3.new(0, 5, 0)
         end
-    else
-        godModeButton.Text = "God Mode: Off"
-        godModeButton.BackgroundColor3 = Color3.fromRGB(100, 100, 100)
-        if godModeConn then
-            godModeConn:Disconnect()
-        end
-    end
+    end)
 end)
 
--- Teleport to Mouse
-local tpButton = Instance.new("TextButton")
-tpButton.Size = UDim2.new(1, 0, 0, 30)
-tpButton.Position = UDim2.new(0, 0, 0, 330)
-tpButton.Text = "Teleport to Mouse"
-tpButton.BackgroundColor3 = Color3.fromRGB(100, 100, 100)
-tpButton.Parent = content
-
-tpButton.MouseButton1Click:Connect(function()
-    if player.Character and player.Character:FindFirstChild("HumanoidRootPart") then
-        player.Character.HumanoidRootPart.CFrame = mouse.Hit + Vector3.new(0, 5, 0)
-    end
-end)
-
--- Joystick and fly code remains the same
 -- Joystick for mobile
 local joystickOuter = Instance.new("Frame")
 joystickOuter.Name = "JoystickOuter"
@@ -573,14 +547,6 @@ player.CharacterAdded:Connect(function(char)
     if flying then
         stopFly()
         startFly()
-    end
-    if godMode then
-        local humanoid = char:WaitForChild("Humanoid")
-        godModeConn = humanoid.HealthChanged:Connect(function(health)
-            if health < humanoid.MaxHealth then
-                humanoid.Health = humanoid.MaxHealth
-            end
-        end)
     end
     if esp then
         for _, plr in ipairs(game.Players:GetPlayers()) do
