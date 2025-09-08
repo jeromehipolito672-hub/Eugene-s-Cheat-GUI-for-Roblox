@@ -1,4 +1,3 @@
-
 -- LocalScript in StarterPlayerScripts or similar
 
 local player = game.Players.LocalPlayer
@@ -6,12 +5,12 @@ local mouse = player:GetMouse()
 local UIS = game:GetService("UserInputService")
 local gui = Instance.new("ScreenGui")
 gui.Parent = player:WaitForChild("PlayerGui")
-gui.Name = "EugeneCheatGUI"
+gui.Name = "CheatGUI"
 
 -- Main Frame
 local frame = Instance.new("Frame")
-frame.Size = UDim2.new(0, 200, 0, 450)  -- Increased height for fly controls
-frame.Position = UDim2.new(0.5, -100, 0.5, -225)
+frame.Size = UDim2.new(0, 200, 0, 300)
+frame.Position = UDim2.new(0.5, -100, 0.5, -150)
 frame.BackgroundColor3 = Color3.fromRGB(50, 50, 50)
 frame.BorderSizePixel = 0
 frame.Active = true
@@ -27,7 +26,7 @@ titleBar.Parent = frame
 local titleLabel = Instance.new("TextLabel")
 titleLabel.Size = UDim2.new(1, -30, 1, 0)
 titleLabel.Position = UDim2.new(0, 0, 0, 0)
-titleLabel.Text = "Eugene Cheat GUI"
+titleLabel.Text = "Cheat GUI"
 titleLabel.TextColor3 = Color3.fromRGB(255, 255, 255)
 titleLabel.BackgroundTransparency = 1
 titleLabel.Parent = titleBar
@@ -48,7 +47,7 @@ minimizeButton.MouseButton1Click:Connect(function()
         frame.Size = UDim2.new(0, 200, 0, 30)
         minimizeButton.Text = "+"
     else
-        frame.Size = UDim2.new(0, 200, 0, 450)
+        frame.Size = UDim2.new(0, 200, 0, 300)
         minimizeButton.Text = "-"
     end
 end)
@@ -200,34 +199,86 @@ local controls = {
     down = 0
 }
 local isMobile = UIS.TouchEnabled
+local moveVector = Vector2.new(0, 0)
 
--- Fly Controls for Mobile
-local flyControls = Instance.new("Frame")
-flyControls.Size = UDim2.new(1, 0, 0, 200)
-flyControls.Position = UDim2.new(0, 0, 0, 180)
-flyControls.BackgroundTransparency = 1
-flyControls.Visible = false
-flyControls.Parent = content
+-- Joystick for mobile
+local joystickOuter = Instance.new("Frame")
+joystickOuter.Name = "JoystickOuter"
+joystickOuter.Size = UDim2.new(0, 150, 0, 150)
+joystickOuter.Position = UDim2.new(0, 10, 1, -160)
+joystickOuter.BackgroundColor3 = Color3.fromRGB(128, 128, 128)
+joystickOuter.BackgroundTransparency = 0.5
+joystickOuter.Parent = gui
+joystickOuter.Visible = false
 
--- Create buttons
+local joystickThumb = Instance.new("Frame")
+joystickThumb.Name = "JoystickThumb"
+joystickThumb.AnchorPoint = Vector2.new(0.5, 0.5)
+joystickThumb.Size = UDim2.new(0, 50, 0, 50)
+joystickThumb.Position = UDim2.new(0.5, 0, 0.5, 0)
+joystickThumb.BackgroundColor3 = Color3.fromRGB(255, 255, 255)
+joystickThumb.BackgroundTransparency = 0.5
+joystickThumb.Parent = joystickOuter
+
+-- Up/Down buttons for mobile
+local upDownFrame = Instance.new("Frame")
+upDownFrame.Name = "UpDownFrame"
+upDownFrame.Size = UDim2.new(0, 100, 0, 150)
+upDownFrame.Position = UDim2.new(1, -110, 1, -160)
+upDownFrame.BackgroundTransparency = 1
+upDownFrame.Parent = gui
+upDownFrame.Visible = false
+
 local function createFlyButton(name, pos, actionDown, actionUp)
     local btn = Instance.new("TextButton")
-    btn.Size = UDim2.new(0, 60, 0, 30)
+    btn.Size = UDim2.new(1, 0, 0, 50)
     btn.Position = pos
     btn.Text = name
     btn.BackgroundColor3 = Color3.fromRGB(150, 150, 150)
-    btn.Parent = flyControls
+    btn.Parent = upDownFrame
     btn.MouseButton1Down:Connect(actionDown)
     btn.MouseButton1Up:Connect(actionUp)
     return btn
 end
 
-createFlyButton("Forward", UDim2.new(0.35, 0, 0, 0), function() controls.forward = 1 end, function() controls.forward = 0 end)
-createFlyButton("Backward", UDim2.new(0.35, 0, 0, 60), function() controls.backward = 1 end, function() controls.backward = 0 end)
-createFlyButton("Left", UDim2.new(0, 0, 0, 30), function() controls.left = 1 end, function() controls.left = 0 end)
-createFlyButton("Right", UDim2.new(0.7, 0, 0, 30), function() controls.right = 1 end, function() controls.right = 0 end)
-createFlyButton("Up", UDim2.new(0, 0, 0, 90), function() controls.up = 1 end, function() controls.up = 0 end)
-createFlyButton("Down", UDim2.new(0.7, 0, 0, 90), function() controls.down = 1 end, function() controls.down = 0 end)
+createFlyButton("Up", UDim2.new(0, 0, 0, 0), function() controls.up = 1 end, function() controls.up = 0 end)
+createFlyButton("Down", UDim2.new(0, 0, 0, 60), function() controls.down = 1 end, function() controls.down = 0 end)
+
+-- Joystick handling
+local currentTouch = nil
+local maxDistance = 75
+
+UIS.TouchStarted:Connect(function(input, gameProcessed)
+    if gameProcessed or not flying or not isMobile or currentTouch then return end
+    local absPos = joystickOuter.AbsolutePosition
+    local absSize = joystickOuter.AbsoluteSize
+    if input.Position.X >= absPos.X and input.Position.X <= absPos.X + absSize.X and
+       input.Position.Y >= absPos.Y and input.Position.Y <= absPos.Y + absSize.Y then
+        currentTouch = input
+        joystickThumb.Position = UDim2.new(0.5, 0, 0.5, 0)
+        moveVector = Vector2.new(0, 0)
+    end
+end)
+
+UIS.TouchMoved:Connect(function(input, gameProcessed)
+    if gameProcessed or not currentTouch or input ~= currentTouch then return end
+    local center = joystickOuter.AbsolutePosition + joystickOuter.AbsoluteSize * 0.5
+    local delta = input.Position - center
+    local distance = delta.Magnitude
+    if distance > maxDistance then
+        delta = (delta / distance) * maxDistance
+    end
+    joystickThumb.Position = UDim2.new(0.5, delta.X, 0.5, delta.Y)
+    moveVector = delta / maxDistance
+end)
+
+UIS.TouchEnded:Connect(function(input)
+    if input == currentTouch then
+        currentTouch = nil
+        joystickThumb.Position = UDim2.new(0.5, 0, 0.5, 0)
+        moveVector = Vector2.new(0, 0)
+    end
+end)
 
 local function startFly()
     local character = player.Character
@@ -247,31 +298,34 @@ local function startFly()
     
     -- Reset controls
     for k in pairs(controls) do controls[k] = 0 end
+    moveVector = Vector2.new(0, 0)
     
-    -- Keyboard controls
-    local keyMap = {
-        [Enum.KeyCode.W] = "forward",
-        [Enum.KeyCode.S] = "backward",
-        [Enum.KeyCode.A] = "left",
-        [Enum.KeyCode.D] = "right",
-        [Enum.KeyCode.Space] = "up",
-        [Enum.KeyCode.LeftControl] = "down",
-    }
-    
-    inputBeganConn = UIS.InputBegan:Connect(function(input, gameProcessed)
-        if gameProcessed then return end
-        if input.UserInputType == Enum.UserInputType.Keyboard then
-            local dir = keyMap[input.KeyCode]
-            if dir then controls[dir] = 1 end
-        end
-    end)
-    
-    inputEndedConn = UIS.InputEnded:Connect(function(input)
-        if input.UserInputType == Enum.UserInputType.Keyboard then
-            local dir = keyMap[input.KeyCode]
-            if dir then controls[dir] = 0 end
-        end
-    end)
+    -- Keyboard controls if not mobile
+    if not isMobile then
+        local keyMap = {
+            [Enum.KeyCode.W] = "forward",
+            [Enum.KeyCode.S] = "backward",
+            [Enum.KeyCode.A] = "left",
+            [Enum.KeyCode.D] = "right",
+            [Enum.KeyCode.Space] = "up",
+            [Enum.KeyCode.LeftControl] = "down",
+        }
+        
+        inputBeganConn = UIS.InputBegan:Connect(function(input, gameProcessed)
+            if gameProcessed then return end
+            if input.UserInputType == Enum.UserInputType.Keyboard then
+                local dir = keyMap[input.KeyCode]
+                if dir then controls[dir] = 1 end
+            end
+        end)
+        
+        inputEndedConn = UIS.InputEnded:Connect(function(input)
+            if input.UserInputType == Enum.UserInputType.Keyboard then
+                local dir = keyMap[input.KeyCode]
+                if dir then controls[dir] = 0 end
+            end
+        end)
+    end
     
     -- Render loop
     renderSteppedConn = game:GetService("RunService").RenderStepped:Connect(function()
@@ -279,9 +333,16 @@ local function startFly()
             bodyGyro.CFrame = workspace.CurrentCamera.CFrame
             local camLook = workspace.CurrentCamera.CFrame.LookVector
             local camRight = workspace.CurrentCamera.CFrame.RightVector
-            local moveX = -controls.left + controls.right
-            local moveY = controls.up - controls.down
-            local moveZ = controls.forward - controls.backward
+            local moveX, moveY, moveZ
+            if isMobile then
+                moveX = moveVector.X
+                moveZ = -moveVector.Y
+                moveY = controls.up - controls.down
+            else
+                moveX = controls.right - controls.left
+                moveY = controls.up - controls.down
+                moveZ = controls.forward - controls.backward
+            end
             local move = Vector3.new(moveX, moveY, moveZ)
             bodyVelocity.Velocity = (camLook * move.Z + camRight * move.X + Vector3.new(0, move.Y, 0)) * flySpeed
         end
@@ -289,7 +350,8 @@ local function startFly()
     
     -- Show mobile controls if applicable
     if isMobile then
-        flyControls.Visible = true
+        joystickOuter.Visible = true
+        upDownFrame.Visible = true
     end
 end
 
@@ -299,9 +361,11 @@ local function stopFly()
     if inputBeganConn then inputBeganConn:Disconnect() end
     if inputEndedConn then inputEndedConn:Disconnect() end
     if renderSteppedConn then renderSteppedConn:Disconnect() end
-    flyControls.Visible = false
+    joystickOuter.Visible = false
+    upDownFrame.Visible = false
     -- Reset controls
     for k in pairs(controls) do controls[k] = 0 end
+    moveVector = Vector2.new(0, 0)
 end
 
 flyButton.MouseButton1Click:Connect(function()
