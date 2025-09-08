@@ -26,7 +26,7 @@ titleBar.Parent = frame
 local titleLabel = Instance.new("TextLabel")
 titleLabel.Size = UDim2.new(1, -30, 1, 0)
 titleLabel.Position = UDim2.new(0, 0, 0, 0)
-titleLabel.Text = "EUGENIUM"
+titleLabel.Text = "EUGENEIUM"
 titleLabel.TextColor3 = Color3.fromRGB(255, 255, 255)
 titleLabel.BackgroundTransparency = 1
 titleLabel.Parent = titleBar
@@ -208,6 +208,7 @@ joystickOuter.Size = UDim2.new(0, 150, 0, 150)
 joystickOuter.Position = UDim2.new(0, 10, 1, -160)
 joystickOuter.BackgroundColor3 = Color3.fromRGB(128, 128, 128)
 joystickOuter.BackgroundTransparency = 0.5
+joystickOuter.Active = true
 joystickOuter.Parent = gui
 joystickOuter.Visible = false
 
@@ -256,21 +257,7 @@ createFlyButton("Down", UDim2.new(0, 0, 0, 60), function() controls.down = 1 end
 local currentTouch = nil
 local maxDistance = 75
 
-UIS.TouchStarted:Connect(function(input, gameProcessed)
-    if gameProcessed or not flying or not isMobile or currentTouch then return end
-    local absPos = joystickOuter.AbsolutePosition
-    local absSize = joystickOuter.AbsoluteSize
-    local touchPos = Vector2.new(input.Position.X, input.Position.Y)
-    if touchPos.X >= absPos.X and touchPos.X <= absPos.X + absSize.X and
-       touchPos.Y >= absPos.Y and touchPos.Y <= absPos.Y + absSize.Y then
-        currentTouch = input
-        joystickThumb.Position = UDim2.new(0.5, 0, 0.5, 0)
-        moveVector = Vector2.new(0, 0)
-    end
-end)
-
-UIS.TouchMoved:Connect(function(input, gameProcessed)
-    if gameProcessed or not currentTouch or input ~= currentTouch then return end
+local function updateJoystick(input)
     local center = joystickOuter.AbsolutePosition + joystickOuter.AbsoluteSize * 0.5
     local position = Vector2.new(input.Position.X, input.Position.Y)
     local delta = position - center
@@ -280,10 +267,23 @@ UIS.TouchMoved:Connect(function(input, gameProcessed)
     end
     joystickThumb.Position = UDim2.new(0.5, delta.X, 0.5, delta.Y)
     moveVector = delta / maxDistance
+end
+
+joystickOuter.InputBegan:Connect(function(input)
+    if input.UserInputType == Enum.UserInputType.Touch and flying and not currentTouch then
+        currentTouch = input
+        updateJoystick(input)
+    end
 end)
 
-UIS.TouchEnded:Connect(function(input)
-    if input == currentTouch then
+UIS.InputChanged:Connect(function(input)
+    if input.UserInputType == Enum.UserInputType.Touch and input == currentTouch then
+        updateJoystick(input)
+    end
+end)
+
+UIS.InputEnded:Connect(function(input)
+    if input.UserInputType == Enum.UserInputType.Touch and input == currentTouch then
         currentTouch = nil
         joystickThumb.Position = UDim2.new(0.5, 0, 0.5, 0)
         moveVector = Vector2.new(0, 0)
