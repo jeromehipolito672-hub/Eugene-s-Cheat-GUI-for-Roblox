@@ -26,7 +26,7 @@ titleBar.Parent = frame
 local titleLabel = Instance.new("TextLabel")
 titleLabel.Size = UDim2.new(1, -30, 1, 0)
 titleLabel.Position = UDim2.new(0, 0, 0, 0)
-titleLabel.Text = "Cheat GUI"
+titleLabel.Text = "EUGENIUM"
 titleLabel.TextColor3 = Color3.fromRGB(255, 255, 255)
 titleLabel.BackgroundTransparency = 1
 titleLabel.Parent = titleBar
@@ -211,6 +211,10 @@ joystickOuter.BackgroundTransparency = 0.5
 joystickOuter.Parent = gui
 joystickOuter.Visible = false
 
+local outerCorner = Instance.new("UICorner")
+outerCorner.CornerRadius = UDim.new(1, 0)
+outerCorner.Parent = joystickOuter
+
 local joystickThumb = Instance.new("Frame")
 joystickThumb.Name = "JoystickThumb"
 joystickThumb.AnchorPoint = Vector2.new(0.5, 0.5)
@@ -219,6 +223,10 @@ joystickThumb.Position = UDim2.new(0.5, 0, 0.5, 0)
 joystickThumb.BackgroundColor3 = Color3.fromRGB(255, 255, 255)
 joystickThumb.BackgroundTransparency = 0.5
 joystickThumb.Parent = joystickOuter
+
+local thumbCorner = Instance.new("UICorner")
+thumbCorner.CornerRadius = UDim.new(1, 0)
+thumbCorner.Parent = joystickThumb
 
 -- Up/Down buttons for mobile
 local upDownFrame = Instance.new("Frame")
@@ -252,8 +260,9 @@ UIS.TouchStarted:Connect(function(input, gameProcessed)
     if gameProcessed or not flying or not isMobile or currentTouch then return end
     local absPos = joystickOuter.AbsolutePosition
     local absSize = joystickOuter.AbsoluteSize
-    if input.Position.X >= absPos.X and input.Position.X <= absPos.X + absSize.X and
-       input.Position.Y >= absPos.Y and input.Position.Y <= absPos.Y + absSize.Y then
+    local touchPos = Vector2.new(input.Position.X, input.Position.Y)
+    if touchPos.X >= absPos.X and touchPos.X <= absPos.X + absSize.X and
+       touchPos.Y >= absPos.Y and touchPos.Y <= absPos.Y + absSize.Y then
         currentTouch = input
         joystickThumb.Position = UDim2.new(0.5, 0, 0.5, 0)
         moveVector = Vector2.new(0, 0)
@@ -263,10 +272,11 @@ end)
 UIS.TouchMoved:Connect(function(input, gameProcessed)
     if gameProcessed or not currentTouch or input ~= currentTouch then return end
     local center = joystickOuter.AbsolutePosition + joystickOuter.AbsoluteSize * 0.5
-    local delta = input.Position - center
+    local position = Vector2.new(input.Position.X, input.Position.Y)
+    local delta = position - center
     local distance = delta.Magnitude
     if distance > maxDistance then
-        delta = (delta / distance) * maxDistance
+        delta = delta.Unit * maxDistance
     end
     joystickThumb.Position = UDim2.new(0.5, delta.X, 0.5, delta.Y)
     moveVector = delta / maxDistance
