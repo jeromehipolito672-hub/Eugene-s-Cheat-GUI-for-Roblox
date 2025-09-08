@@ -3,18 +3,19 @@
 local player = game.Players.LocalPlayer
 local mouse = player:GetMouse()
 local UIS = game:GetService("UserInputService")
+local RS = game:GetService("RunService")
 local gui = Instance.new("ScreenGui")
 gui.Parent = player:WaitForChild("PlayerGui")
 gui.Name = "CheatGUI"
 
 -- Main Frame
 local frame = Instance.new("Frame")
-frame.Size = UDim2.new(0, 200, 0, 300)
-frame.Position = UDim2.new(0.5, -100, 0.5, -150)
+frame.Size = UDim2.new(0, 200, 0, 500)  -- Increased height for more features
+frame.Position = UDim2.new(0.5, -100, 0.5, -250)
 frame.BackgroundColor3 = Color3.fromRGB(50, 50, 50)
 frame.BorderSizePixel = 0
 frame.Active = true
-frame.ClipsDescendants = true  -- To clip content when minimized
+frame.ClipsDescendants = true
 frame.Parent = gui
 
 -- Title Bar
@@ -23,10 +24,10 @@ titleBar.Size = UDim2.new(1, 0, 0, 30)
 titleBar.BackgroundColor3 = Color3.fromRGB(30, 30, 30)
 titleBar.Parent = frame
 
-local titleLabel = Instance.new("TextLabel")
+local titleLabel = Instance.new("EUGENEIUM")
 titleLabel.Size = UDim2.new(1, -30, 1, 0)
 titleLabel.Position = UDim2.new(0, 0, 0, 0)
-titleLabel.Text = "EUGENEIUM"
+titleLabel.Text = "Cheat GUI"
 titleLabel.TextColor3 = Color3.fromRGB(255, 255, 255)
 titleLabel.BackgroundTransparency = 1
 titleLabel.Parent = titleBar
@@ -47,7 +48,7 @@ minimizeButton.MouseButton1Click:Connect(function()
         frame.Size = UDim2.new(0, 200, 0, 30)
         minimizeButton.Text = "+"
     else
-        frame.Size = UDim2.new(0, 200, 0, 300)
+        frame.Size = UDim2.new(0, 200, 0, 500)
         minimizeButton.Text = "-"
     end
 end)
@@ -157,7 +158,7 @@ noclipButton.MouseButton1Click:Connect(function()
     if noclip then
         noclipButton.Text = "Noclip: On"
         noclipButton.BackgroundColor3 = Color3.fromRGB(50, 200, 50)
-        noclipConn = game:GetService("RunService").Stepped:Connect(function()
+        noclipConn = RS.Stepped:Connect(function()
             if player.Character then
                 for _, part in ipairs(player.Character:GetDescendants()) do
                     if part:IsA("BasePart") and part.CanCollide then
@@ -201,6 +202,173 @@ local controls = {
 local isMobile = UIS.TouchEnabled
 local moveVector = Vector2.new(0, 0)
 
+-- Fly Speed
+local fsLabel = Instance.new("TextLabel")
+fsLabel.Size = UDim2.new(1, 0, 0, 30)
+fsLabel.Position = UDim2.new(0, 0, 0, 180)
+fsLabel.Text = "FlySpeed: 50"
+fsLabel.TextColor3 = Color3.fromRGB(255, 255, 255)
+fsLabel.BackgroundTransparency = 1
+fsLabel.Parent = content
+
+local fsSlider = Instance.new("TextBox")
+fsSlider.Size = UDim2.new(1, 0, 0, 30)
+fsSlider.Position = UDim2.new(0, 0, 0, 210)
+fsSlider.Text = "50"
+fsSlider.Parent = content
+
+fsSlider.FocusLost:Connect(function()
+    flySpeed = tonumber(fsSlider.Text) or 50
+    fsLabel.Text = "FlySpeed: " .. flySpeed
+end)
+
+-- ESP Toggle
+local espButton = Instance.new("TextButton")
+espButton.Size = UDim2.new(1, 0, 0, 30)
+espButton.Position = UDim2.new(0, 0, 0, 240)
+espButton.Text = "ESP: Off"
+espButton.BackgroundColor3 = Color3.fromRGB(100, 100, 100)
+espButton.Parent = content
+
+local esp = false
+local espConnections = {}
+local espBillboards = {}
+
+local function createESP(plr)
+    if plr == player or not plr.Character or not plr.Character:FindFirstChild("Head") then return end
+    local billboard = Instance.new("BillboardGui")
+    billboard.Name = "ESP"
+    billboard.Adornee = plr.Character.Head
+    billboard.Parent = plr.Character.Head
+    billboard.Size = UDim2.new(0, 200, 0, 50)
+    billboard.StudsOffset = Vector3.new(0, 2, 0)
+    billboard.AlwaysOnTop = true
+    
+    local text = Instance.new("TextLabel")
+    text.Text = plr.Name
+    text.Size = UDim2.new(1, 0, 1, 0)
+    text.BackgroundTransparency = 1
+    text.TextColor3 = Color3.fromRGB(255, 0, 0)
+    text.Parent = billboard
+    
+    espBillboards[plr] = billboard
+end
+
+local function removeESP(plr)
+    if espBillboards[plr] then
+        espBillboards[plr]:Destroy()
+        espBillboards[plr] = nil
+    end
+end
+
+espButton.MouseButton1Click:Connect(function()
+    esp = not esp
+    if esp then
+        espButton.Text = "ESP: On"
+        espButton.BackgroundColor3 = Color3.fromRGB(50, 200, 50)
+        for _, plr in ipairs(game.Players:GetPlayers()) do
+            createESP(plr)
+        end
+        espConnections.playerAdded = game.Players.PlayerAdded:Connect(function(plr)
+            plr.CharacterAdded:Connect(function()
+                createESP(plr)
+            end)
+        end)
+        espConnections.playerRemoving = game.Players.PlayerRemoving:Connect(removeESP)
+    else
+        espButton.Text = "ESP: Off"
+        espButton.BackgroundColor3 = Color3.fromRGB(100, 100, 100)
+        for _, plr in ipairs(game.Players:GetPlayers()) do
+            removeESP(plr)
+        end
+        for _, conn in pairs(espConnections) do
+            conn:Disconnect()
+        end
+        espConnections = {}
+    end
+end)
+
+-- Infinite Jump Toggle
+local infJumpButton = Instance.new("TextButton")
+infJumpButton.Size = UDim2.new(1, 0, 0, 30)
+infJumpButton.Position = UDim2.new(0, 0, 0, 270)
+infJumpButton.Text = "Inf Jump: Off"
+infJumpButton.BackgroundColor3 = Color3.fromRGB(100, 100, 100)
+infJumpButton.Parent = content
+
+local infJump = false
+local infJumpConn
+
+infJumpButton.MouseButton1Click:Connect(function()
+    infJump = not infJump
+    if infJump then
+        infJumpButton.Text = "Inf Jump: On"
+        infJumpButton.BackgroundColor3 = Color3.fromRGB(50, 200, 50)
+        infJumpConn = UIS.InputBegan:Connect(function(input)
+            if input.UserInputType == Enum.UserInputType.Keyboard and input.KeyCode == Enum.KeyCode.Space then
+                local humanoid = player.Character and player.Character:FindFirstChildOfClass("Humanoid")
+                if humanoid then
+                    humanoid:ChangeState(Enum.HumanoidStateType.Jumping)
+                end
+            end
+        end)
+    else
+        infJumpButton.Text = "Inf Jump: Off"
+        infJumpButton.BackgroundColor3 = Color3.fromRGB(100, 100, 100)
+        if infJumpConn then
+            infJumpConn:Disconnect()
+        end
+    end
+end)
+
+-- God Mode Toggle
+local godModeButton = Instance.new("TextButton")
+godModeButton.Size = UDim2.new(1, 0, 0, 30)
+godModeButton.Position = UDim2.new(0, 0, 0, 300)
+godModeButton.Text = "God Mode: Off"
+godModeButton.BackgroundColor3 = Color3.fromRGB(100, 100, 100)
+godModeButton.Parent = content
+
+local godMode = false
+local godModeConn
+
+godModeButton.MouseButton1Click:Connect(function()
+    godMode = not godMode
+    if godMode then
+        godModeButton.Text = "God Mode: On"
+        godModeButton.BackgroundColor3 = Color3.fromRGB(50, 200, 50)
+        local humanoid = player.Character and player.Character:FindFirstChildOfClass("Humanoid")
+        if humanoid then
+            godModeConn = humanoid.HealthChanged:Connect(function(health)
+                if health < humanoid.MaxHealth then
+                    humanoid.Health = humanoid.MaxHealth
+                end
+            end)
+        end
+    else
+        godModeButton.Text = "God Mode: Off"
+        godModeButton.BackgroundColor3 = Color3.fromRGB(100, 100, 100)
+        if godModeConn then
+            godModeConn:Disconnect()
+        end
+    end
+end)
+
+-- Teleport to Mouse
+local tpButton = Instance.new("TextButton")
+tpButton.Size = UDim2.new(1, 0, 0, 30)
+tpButton.Position = UDim2.new(0, 0, 0, 330)
+tpButton.Text = "Teleport to Mouse"
+tpButton.BackgroundColor3 = Color3.fromRGB(100, 100, 100)
+tpButton.Parent = content
+
+tpButton.MouseButton1Click:Connect(function()
+    if player.Character and player.Character:FindFirstChild("HumanoidRootPart") then
+        player.Character.HumanoidRootPart.CFrame = mouse.Hit + Vector3.new(0, 5, 0)
+    end
+end)
+
+-- Joystick and fly code remains the same
 -- Joystick for mobile
 local joystickOuter = Instance.new("Frame")
 joystickOuter.Name = "JoystickOuter"
@@ -338,7 +506,7 @@ local function startFly()
     end
     
     -- Render loop
-    renderSteppedConn = game:GetService("RunService").RenderStepped:Connect(function()
+    renderSteppedConn = RS.RenderStepped:Connect(function()
         if flying and bodyGyro and bodyVelocity then
             bodyGyro.CFrame = workspace.CurrentCamera.CFrame
             local camLook = workspace.CurrentCamera.CFrame.LookVector
@@ -394,8 +562,7 @@ end)
 -- Update on character added
 player.CharacterAdded:Connect(function(char)
     if noclip then
-        -- Re-enable noclip if was on
-        noclipConn = game:GetService("RunService").Stepped:Connect(function()
+        noclipConn = RS.Stepped:Connect(function()
             for _, part in ipairs(char:GetDescendants()) do
                 if part:IsA("BasePart") and part.CanCollide then
                     part.CanCollide = false
@@ -404,9 +571,23 @@ player.CharacterAdded:Connect(function(char)
         end)
     end
     if flying then
-        -- Re-start fly
         stopFly()
         startFly()
+    end
+    if godMode then
+        local humanoid = char:WaitForChild("Humanoid")
+        godModeConn = humanoid.HealthChanged:Connect(function(health)
+            if health < humanoid.MaxHealth then
+                humanoid.Health = humanoid.MaxHealth
+            end
+        end)
+    end
+    if esp then
+        for _, plr in ipairs(game.Players:GetPlayers()) do
+            if plr.Character then
+                createESP(plr)
+            end
+        end
     end
     -- Update labels
     local humanoid = char:WaitForChild("Humanoid")
@@ -415,3 +596,12 @@ player.CharacterAdded:Connect(function(char)
     jpLabel.Text = "JumpPower: " .. humanoid.JumpPower
     jpSlider.Text = tostring(humanoid.JumpPower)
 end)
+
+-- Initial ESP setup if players already loaded
+if esp then
+    for _, plr in ipairs(game.Players:GetPlayers()) do
+        if plr.Character then
+            createESP(plr)
+        end
+    end
+end
