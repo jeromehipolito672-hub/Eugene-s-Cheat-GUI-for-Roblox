@@ -10,8 +10,8 @@ gui.Name = "CheatGUI"
 
 -- Main Frame
 local frame = Instance.new("Frame")
-frame.Size = UDim2.new(0, 200, 0, 400)  -- Adjusted height
-frame.Position = UDim2.new(0.5, -100, 0.5, -200)
+frame.Size = UDim2.new(0, 200, 0, 450)  -- Increased height for new feature
+frame.Position = UDim2.new(0.5, -100, 0.5, -225)
 frame.BackgroundColor3 = Color3.fromRGB(50, 50, 50)
 frame.BorderSizePixel = 0
 frame.Active = true
@@ -48,7 +48,7 @@ minimizeButton.MouseButton1Click:Connect(function()
         frame.Size = UDim2.new(0, 200, 0, 30)
         minimizeButton.Text = "+"
     else
-        frame.Size = UDim2.new(0, 200, 0, 400)
+        frame.Size = UDim2.new(0, 200, 0, 450)
         minimizeButton.Text = "-"
     end
 end)
@@ -232,29 +232,57 @@ espButton.Parent = content
 
 local esp = false
 local espConnections = {}
+local espHighlights = {}
 local espBillboards = {}
 
 local function createESP(plr)
-    if plr == player or not plr.Character or not plr.Character:FindFirstChild("Head") then return end
-    local billboard = Instance.new("BillboardGui")
-    billboard.Name = "ESP"
-    billboard.Adornee = plr.Character.Head
-    billboard.Parent = plr.Character.Head
-    billboard.Size = UDim2.new(0, 200, 0, 50)
-    billboard.StudsOffset = Vector3.new(0, 2, 0)
-    billboard.AlwaysOnTop = true
+    if plr == player or not plr.Character then return end
     
-    local text = Instance.new("TextLabel")
-    text.Text = plr.Name
-    text.Size = UDim2.new(1, 0, 1, 0)
-    text.BackgroundTransparency = 1
-    text.TextColor3 = Color3.fromRGB(255, 0, 0)
-    text.Parent = billboard
+    -- Highlight
+    local highlight = Instance.new("Highlight")
+    highlight.Name = "ESPHighlight"
+    highlight.Parent = plr.Character
+    highlight.Adornee = plr.Character
+    highlight.DepthMode = Enum.HighlightDepthMode.AlwaysOnTop
+    highlight.OutlineTransparency = 0
+    highlight.FillTransparency = 0.5
     
-    espBillboards[plr] = billboard
+    local color = Color3.fromRGB(255, 255, 255)  -- Default white
+    if plr.Team then
+        color = plr.Team.TeamColor.Color
+    end
+    highlight.OutlineColor = color
+    highlight.FillColor = color
+    
+    espHighlights[plr] = highlight
+    
+    -- Billboard for name
+    local head = plr.Character:FindFirstChild("Head")
+    if head then
+        local billboard = Instance.new("BillboardGui")
+        billboard.Name = "ESP"
+        billboard.Adornee = head
+        billboard.Parent = head
+        billboard.Size = UDim2.new(0, 200, 0, 50)
+        billboard.StudsOffset = Vector3.new(0, 2, 0)
+        billboard.AlwaysOnTop = true
+        
+        local text = Instance.new("TextLabel")
+        text.Text = plr.Name
+        text.Size = UDim2.new(1, 0, 1, 0)
+        text.BackgroundTransparency = 1
+        text.TextColor3 = color
+        text.Parent = billboard
+        
+        espBillboards[plr] = billboard
+    end
 end
 
 local function removeESP(plr)
+    if espHighlights[plr] then
+        espHighlights[plr]:Destroy()
+        espHighlights[plr] = nil
+    end
     if espBillboards[plr] then
         espBillboards[plr]:Destroy()
         espBillboards[plr] = nil
@@ -304,8 +332,8 @@ infJumpButton.MouseButton1Click:Connect(function()
     if infJump then
         infJumpButton.Text = "Inf Jump: On"
         infJumpButton.BackgroundColor3 = Color3.fromRGB(50, 200, 50)
-        infJumpConn = UIS.InputBegan:Connect(function(input)
-            if input.UserInputType == Enum.UserInputType.Keyboard and input.KeyCode == Enum.KeyCode.Space then
+        infJumpConn = UIS.InputBegan:Connect(function(input, gameProcessed)
+            if not gameProcessed and input.KeyCode == Enum.KeyCode.Space then
                 local humanoid = player.Character and player.Character:FindFirstChildOfClass("Humanoid")
                 if humanoid then
                     humanoid:ChangeState(Enum.HumanoidStateType.Jumping)
@@ -331,16 +359,54 @@ tpToolButton.Parent = content
 
 local tpTool
 tpToolButton.MouseButton1Click:Connect(function()
-    if tpTool then return end
+    if tpTool then tpTool:Destroy() end
     tpTool = Instance.new("Tool")
     tpTool.Name = "Teleport Tool"
     tpTool.Parent = player.Backpack
+    tpTool.RequiresHandle = false
     tpTool.Activated:Connect(function()
         local char = player.Character
         if char and char:FindFirstChild("HumanoidRootPart") then
             char.HumanoidRootPart.CFrame = mouse.Hit + Vector3.new(0, 5, 0)
         end
     end)
+end)
+
+-- TP to Player
+local tpPlayerLabel = Instance.new("TextLabel")
+tpPlayerLabel.Size = UDim2.new(1, 0, 0, 30)
+tpPlayerLabel.Position = UDim2.new(0, 0, 0, 330)
+tpPlayerLabel.Text = "TP to Player:"
+tpPlayerLabel.TextColor3 = Color3.fromRGB(255, 255, 255)
+tpPlayerLabel.BackgroundTransparency = 1
+tpPlayerLabel.Parent = content
+
+local tpPlayerBox = Instance.new("TextBox")
+tpPlayerBox.Size = UDim2.new(1, 0, 0, 30)
+tpPlayerBox.Position = UDim2.new(0, 0, 0, 360)
+tpPlayerBox.Text = ""
+tpPlayerBox.Parent = content
+
+local tpPlayerButton = Instance.new("TextButton")
+tpPlayerButton.Size = UDim2.new(1, 0, 0, 30)
+tpPlayerButton.Position = UDim2.new(0, 0, 0, 390)
+tpPlayerButton.Text = "Teleport"
+tpPlayerButton.BackgroundColor3 = Color3.fromRGB(100, 100, 100)
+tpPlayerButton.Parent = content
+
+tpPlayerButton.MouseButton1Click:Connect(function()
+    local input = tpPlayerBox.Text:lower()
+    if input == "" then return end
+    for _, plr in ipairs(game.Players:GetPlayers()) do
+        if plr ~= player and (plr.Name:lower():find(input, 1, true) == 1 or plr.DisplayName:lower():find(input, 1, true) == 1) then
+            local char = player.Character
+            local targetChar = plr.Character
+            if char and targetChar and char:FindFirstChild("HumanoidRootPart") and targetChar:FindFirstChild("HumanoidRootPart") then
+                char.HumanoidRootPart.CFrame = targetChar.HumanoidRootPart.CFrame + Vector3.new(0, 5, 0)
+            end
+            break
+        end
+    end
 end)
 
 -- Joystick for mobile
