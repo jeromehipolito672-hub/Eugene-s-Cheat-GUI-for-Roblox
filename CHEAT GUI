@@ -1,3 +1,4 @@
+
 -- LocalScript in StarterPlayerScripts or similar
 
 local player = game.Players.LocalPlayer
@@ -27,7 +28,7 @@ titleBar.Parent = frame
 local titleLabel = Instance.new("TextLabel")
 titleLabel.Size = UDim2.new(1, -30, 1, 0)
 titleLabel.Position = UDim2.new(0, 0, 0, 0)
-titleLabel.Text = "EUGENEIUM"
+titleLabel.Text = "Cheat GUI"
 titleLabel.TextColor3 = Color3.fromRGB(255, 255, 255)
 titleLabel.BackgroundTransparency = 1
 titleLabel.Parent = titleBar
@@ -363,7 +364,13 @@ tpToolButton.MouseButton1Click:Connect(function()
     tpTool = Instance.new("Tool")
     tpTool.Name = "Teleport Tool"
     tpTool.Parent = player.Backpack
-    tpTool.RequiresHandle = false
+    
+    local handle = Instance.new("Part")
+    handle.Name = "Handle"
+    handle.Size = Vector3.new(1, 1, 1)
+    handle.Transparency = 1
+    handle.Parent = tpTool
+    
     tpTool.Activated:Connect(function()
         local char = player.Character
         if char and char:FindFirstChild("HumanoidRootPart") then
